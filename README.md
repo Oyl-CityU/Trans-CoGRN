@@ -128,13 +128,6 @@ CUDA_VISIBLE_DEVICES=0 bash run_section3_4_gpu.sh kidney
 
 对于每个目标域，脚本按上述顺序分别使用前一至五个源域进行训练和评估。评估指标直接打印到终端。预测文件和中间检查点写入 `result/Transfer_MultiSource/`，终端日志写入 `reproduction_logs/section3_4/`。该复现流程不需要绘图步骤。
 
-## 可复现性说明
-
-- 运行脚本固定 Python、NumPy、PyTorch 和 CUDA 的随机种子；
-- PyTorch Geometric 的负采样及 GPU 归约计算仍可能产生少量运行间差异；
-- 上述源域顺序同时定义了双源域和四源域等实验设置；
-- 当前实验对每项设置运行一次固定随机种子，不计算跨随机种子的置信区间。
-
 ## 代码与数据来源
 
 论文相关项目主页为 <https://github.com/Oyl-CityU/Trans-CoGRN>。处理后数据与预训练权重的使用和再分发应遵循原始数据来源及原项目仓库的相关条款。

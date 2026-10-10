@@ -1,0 +1,30 @@
+pretrain:
+  lr: 0.0002
+  epochs: 460
+  temperature: 0.102
+  batch_size: 64
+train:
+  lr: 0.0001
+  epochs: 550
+  weight_decay: 0.0005
+  patience: 200
+  min_delta: 0.001
+  neg_to_pos_ratio: 5
+  infer_batch_size: 2048
+model:
+  embed_dim: 128
+  fused_dim: 128
+gnn:
+  hidden_channels: 128
+  out_channels: 128
+  gnn_layer_type: "GAT"
+  num_heads: 16
+  dropout_rate: 0.4
+fusion:
+  num_heads: 16
+  dropout_rate: 0.4
+paths:
+  raw_scrna_dir: "data/datasets/H_kidney/raw_unused"
+  aligned_data_dir: "data/datasets/H_kidney/graph"
+  gold_standards:
+    Combined_Network: "data/gold_standards/kidney_gold_standard_network.txt"

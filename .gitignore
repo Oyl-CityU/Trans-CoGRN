@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+Result_run/
+results/table1/runs/
+reproduction_logs/
+result/Transfer_MultiSource/*
+!result/Transfer_MultiSource/.gitkeep

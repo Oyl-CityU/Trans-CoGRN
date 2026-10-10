@@ -1,0 +1,3 @@
+*.pth filter=lfs diff=lfs merge=lfs -text
+data/**/*_feature.txt filter=lfs diff=lfs merge=lfs -text
+data/**/*.csv binary

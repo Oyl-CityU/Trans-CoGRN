@@ -1,0 +1,126 @@
+=========================================
+[Target] Target Domain: kidney
+[Source] Source Domains (5): ['PBMC', 'brain', 'brain3k', 'Jejunum', 'lymph']
+=========================================
+
+
+
+========================================
+ [Step 2-3-4 Full Joint] encoder+mapper+fusion+GNN End-to-End
+========================================
+
+=== [Step 2-3-4 Full Joint] encoder + mapper + fusion + GNN ===
+Target: kidney, Sources: ['PBMC', 'brain', 'brain3k', 'Jejunum', 'lymph']
+λ1=1.0 (Map), λ2=2.0 (Ortho), λ3=0.5 (MMD), λ_grn_src=1.0, λ_grn_tgt=2.0
+epochs=400, lr=0.0001, neg/pos=5, grad_clip=1.0
+
+Loading Source: PBMC ...
+--- Loading Data from: <PROJECT_ROOT>/data/datasets/PBMC/graph ---
+  - Common Genes Target: 10481
+  - RNA Aligned Shape: (209, 10481)
+  - ATAC Aligned Shape: (209, 10970) (Features retained as original)
+Loading Source: brain ...
+--- Loading Data from: <PROJECT_ROOT>/data/datasets/H_brain/graph ---
+  - Common Genes Target: 10481
+  - RNA Aligned Shape: (270, 10481)
+  - ATAC Aligned Shape: (270, 3332) (Features retained as original)
+Loading Source: brain3k ...
+--- Loading Data from: <PROJECT_ROOT>/data/datasets/H_brain3k/graph ---
+  - Common Genes Target: 10481
+  - RNA Aligned Shape: (189, 10481)
+  - ATAC Aligned Shape: (189, 3233) (Features retained as original)
+Loading Source: Jejunum ...
+--- Loading Data from: <PROJECT_ROOT>/data/datasets/H_jejunum/graph ---
+  - Common Genes Target: 10481
+  - RNA Aligned Shape: (143, 10481)
+  - ATAC Aligned Shape: (143, 10640) (Features retained as original)
+Loading Source: lymph ...
+--- Loading Data from: <PROJECT_ROOT>/data/datasets/H_lymph/graph ---
+  - Common Genes Target: 10481
+  - RNA Aligned Shape: (152, 10481)
+  - ATAC Aligned Shape: (152, 14566) (Features retained as original)
+
+Loading Target: kidney ...
+--- Loading Data from: <PROJECT_ROOT>/data/datasets/H_kidney/graph ---
+  - Common Genes Target: 10481
+  - RNA Aligned Shape: (157, 10481)
+  - ATAC Aligned Shape: (157, 22772) (Features retained as original)
+Target nodes=157, prior edges=3049
+<PROJECT_ROOT>/step_full_joint.py:130: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(orig, map_location=device)
+  -> 加载 PBMC 预训练 ATAC Encoder 权重
+  -> 加载 brain 预训练 ATAC Encoder 权重
+  -> 加载 brain3k 预训练 ATAC Encoder 权重
+  -> 加载 Jejunum 预训练 ATAC Encoder 权重
+  -> 加载 lymph 预训练 ATAC Encoder 权重
+<PROJECT_ROOT>/step_full_joint.py:152: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(first_orig, map_location=device)
+  -> Warm-start fusion + link_pred from PBMC_aligned_model.pth
+>>> Joint Training start ...
+
+Epoch   1/400 | NCE=237.5497 Map=9.6891 Ortho=0.0622 MMD=0.2979 | GRN_src=1.9631 GRN_tgt=1.2177 | Total=1249.9359
+Epoch  20/400 | NCE=23.0637 Map=17.6187 Ortho=0.0394 MMD=0.3456 | GRN_src=0.9745 GRN_tgt=0.9257 | Total=211.4720
+Epoch  40/400 | NCE=12.2264 Map=23.4869 Ortho=0.0170 MMD=0.4770 | GRN_src=0.7474 GRN_tgt=0.8176 | Total=185.3344
+Epoch  60/400 | NCE=9.1365 Map=25.3422 Ortho=0.0121 MMD=0.5465 | GRN_src=0.7309 GRN_tgt=0.8328 | Total=179.2249
+Epoch  80/400 | NCE=7.9401 Map=25.9863 Ortho=0.0100 MMD=0.6086 | GRN_src=0.7188 GRN_tgt=0.7433 | Total=176.3538
+Epoch 100/400 | NCE=6.6932 Map=26.2487 Ortho=0.0147 MMD=0.5886 | GRN_src=0.7121 GRN_tgt=0.7069 | Total=171.3322
+Epoch 120/400 | NCE=6.0638 Map=26.2909 Ortho=0.0088 MMD=0.6227 | GRN_src=0.7158 GRN_tgt=0.7412 | Total=168.4974
+Epoch 140/400 | NCE=5.7344 Map=25.6836 Ortho=0.0079 MMD=0.6099 | GRN_src=0.6932 GRN_tgt=0.7275 | Total=163.6309
+Epoch 160/400 | NCE=5.6845 Map=25.4139 Ortho=0.0068 MMD=0.6224 | GRN_src=0.6896 GRN_tgt=0.7093 | Total=161.9962
+Epoch 180/400 | NCE=5.4312 Map=24.9473 Ortho=0.0064 MMD=0.6180 | GRN_src=0.6782 GRN_tgt=0.7142 | Total=158.3336
+Epoch 200/400 | NCE=5.2734 Map=24.8209 Ortho=0.0104 MMD=0.6095 | GRN_src=0.6683 GRN_tgt=0.6541 | Total=156.7695
+Epoch 220/400 | NCE=5.1478 Map=24.4671 Ortho=0.0076 MMD=0.5861 | GRN_src=0.6609 GRN_tgt=0.6494 | Total=154.2338
+Epoch 240/400 | NCE=5.0902 Map=23.9944 Ortho=0.0054 MMD=0.5839 | GRN_src=0.6584 GRN_tgt=0.6836 | Total=151.6064
+Epoch 260/400 | NCE=5.0933 Map=23.5996 Ortho=0.0049 MMD=0.5540 | GRN_src=0.6595 GRN_tgt=0.6353 | Total=149.4754
+Epoch 280/400 | NCE=4.9768 Map=23.2790 Ortho=0.0048 MMD=0.5377 | GRN_src=0.6605 GRN_tgt=0.6446 | Total=147.2724
+Epoch 300/400 | NCE=5.0669 Map=22.9996 Ortho=0.0050 MMD=0.5133 | GRN_src=0.6460 GRN_tgt=0.6290 | Total=146.1629
+Epoch 320/400 | NCE=4.9424 Map=22.5731 Ortho=0.0046 MMD=0.4817 | GRN_src=0.6531 GRN_tgt=0.6159 | Total=143.3344
+Epoch 340/400 | NCE=4.9889 Map=22.2149 Ortho=0.0043 MMD=0.4618 | GRN_src=0.6521 GRN_tgt=0.5996 | Total=141.6850
+Epoch 360/400 | NCE=4.9643 Map=21.8957 Ortho=0.0048 MMD=0.4469 | GRN_src=0.6445 GRN_tgt=0.6118 | Total=139.9208
+Epoch 380/400 | NCE=4.8909 Map=21.6372 Ortho=0.0038 MMD=0.4311 | GRN_src=0.6280 GRN_tgt=0.6140 | Total=138.1323
+Epoch 400/400 | NCE=4.9851 Map=21.3182 Ortho=0.0053 MMD=0.4061 | GRN_src=0.6356 GRN_tgt=0.5881 | Total=136.9496
+
+模型权重已保存 -> <PROJECT_ROOT>/result/Transfer_MultiSource
+>>> Inference on target kidney ...
+Done. Prediction saved -> <PROJECT_ROOT>/result/Transfer_MultiSource/kidney_TransCoGRN_Finetuned.csv
+[Archive] 同时保存: <PROJECT_ROOT>/result/Transfer_MultiSource/kidney_5src_FIG2_GPU_kidney5_TransCoGRN_Finetuned.csv
+
+
+========================================
+ [Final Step] Running Final Evaluation
+========================================
+使用设备: cuda
+配置: {'pretrain': {'lr': 0.0002, 'epochs': 460, 'temperature': 0.102, 'batch_size': 64}, 'train': {'lr': 0.0001, 'epochs': 550, 'weight_decay': 0.0005, 'patience': 200, 'min_delta': 0.001, 'neg_to_pos_ratio': 5, 'infer_batch_size': 2048}, 'model': {'embed_dim': 128, 'fused_dim': 128}, 'gnn': {'hidden_channels': 128, 'out_channels': 128, 'gnn_layer_type': 'GAT', 'num_heads': 16, 'dropout_rate': 0.4}, 'fusion': {'num_heads': 16, 'dropout_rate': 0.4}, 'paths': {'raw_scrna_dir': './dataset/H_kidney/RNA_matrix', 'aligned_data_dir': 'data/datasets/H_kidney/graph', 'gold_standards': {'Combined_Network': 'data/gold_standards/kidney_gold_standard_network.txt'}}}
+--- 加载并准备深度学习模型的共享数据 ---
+ATAC 特征形状: torch.Size([157, 22772])
+RNA 特征形状: torch.Size([157, 15802])
+
+--- [Run 1] 评估: DeepSEM 在 Combined_Network 上 ---
+[METRICS_JSON] model=DeepSEM gs=Combined_Network {"Precision@K": 0.702, "Recall@K": 0.02257815515245079, "F1@K": 0.043749220989654745, "Specificity@K": 0.9768992248062015, "BalancedACC@K": 0.49973868997932613, "ACC@K": 0.3024186215675577, "MCC@K": -0.0015962886293061104, "AUPR": 0.7076467487788445, "AUROC": 0.5017242751444326, "Enrichment Fold @K": 0.9855241256063314, "NDCG@K": 0.7022423279273591}
+
+--- [Run 1] 评估: Trans-CoGRN 在 Combined_Network 上 ---
+[METRICS_JSON] model=Trans-CoGRN gs=Combined_Network {"Precision@K": 0.734, "Recall@K": 0.023607358806123763, "F1@K": 0.04574348747351365, "Specificity@K": 0.9793798449612403, "BalancedACC@K": 0.5014936018836821, "ACC@K": 0.303873431533006, "MCC@K": 0.009124103612573809, "AUPR": 0.7004502008887488, "AUROC": 0.48239371128643477, "Enrichment Fold @K": 1.0304483022721471, "NDCG@K": 0.7234588578190297}
+
+--- Combined_Network - 均值 (Mean) - 1 次运行 ---
+             Precision@K  Recall@K    F1@K  ...   AUROC  Enrichment Fold @K  NDCG@K
+Model                                       ...
+DeepSEM            0.702    0.0226  0.0437  ...  0.5017              0.9855  0.7022
+Trans-CoGRN        0.734    0.0236  0.0457  ...  0.4824              1.0304  0.7235
+
+[2 rows x 9 columns]
+
+--- Combined_Network - 标准差 (Standard Deviation) - 1 次运行 ---
+             Precision@K  Recall@K  F1@K  ...  AUROC  Enrichment Fold @K  NDCG@K
+Model                                     ...
+DeepSEM              NaN       NaN   NaN  ...    NaN                 NaN     NaN
+Trans-CoGRN          NaN       NaN   NaN  ...    NaN                 NaN     NaN
+
+[2 rows x 9 columns]
+
+--- Combined_Network - 聚合总结 (Mean ± STD) ---
+              Precision@K      Recall@K  ... Enrichment Fold @K        NDCG@K
+Model                                    ...
+DeepSEM      0.7020 ± nan  0.0226 ± nan  ...       0.9855 ± nan  0.7022 ± nan
+Trans-CoGRN  0.7340 ± nan  0.0236 ± nan  ...       1.0304 ± nan  0.7235 ± nan
+
+[2 rows x 9 columns]

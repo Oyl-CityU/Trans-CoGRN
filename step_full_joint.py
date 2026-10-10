@@ -1,11 +1,7 @@
-"""
-step_full_joint.py
-==========================================================
-导师要求: 把 step2_3 (Encoder+Mapper) 与 step4 (Fusion+GNN) 合成
-一个真正的端到端联合训练, 让 encoder/mapper 直接以 GRN 链接预测损失
-为目标进行参数更新, 而不仅仅是生成/对齐任务的目标.
+"""End-to-end optimization used for the Section 3.4 experiments.
 
-总损失 (端到端反传):
+The encoder, mapper, fusion module and GNN are optimized jointly with:
+
   L = Σ_s [ NCE(emb_a_s, z_s_shared)
             + λ1 · MSE(mapper(z_s_shared), emb_a_s.detach())
             + λ2 · Ortho(z_s_shared, z_s_private)
@@ -14,11 +10,9 @@ step_full_joint.py
     + λ2 · Ortho(z_t_shared, z_t_private)
     + λ_grn_tgt · BCE_tgt(fusion(mapper(z_t_shared), z_t_shared) → GAT, A_t)
 
-源域 GRN 损失用 source 真实 ATAC + 真实 prior graph A_s;
-目标域 GRN 损失用 mapper-imputed ATAC + DeepSEM-derived prior graph A_t.
-
-不修改 step2_3_joint_optimization.py / step4_target_gnn_adaptation.py;
-本文件由 run_pipeline.py 通过 --joint_full 开关触发.
+Source-domain GRN losses use observed ATAC profiles and source prior graphs.
+The target-domain GRN loss uses mapper-imputed ATAC representations and the
+DeepSEM-derived target prior graph.
 """
 
 import os
@@ -37,8 +31,47 @@ from trans_model import (
     create_pyg_data,
 )
 from data_loader_transfer import load_aligned_data
-from step3_train_da_mapper import CrossModalMapper
-from step2_3_joint_optimization import mmd_loss, ortho_loss
+
+
+class CrossModalMapper(nn.Module):
+    """Map shared RNA embeddings to the latent ATAC space."""
+
+    def __init__(self, input_dim, output_dim, hidden_dim=256):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, output_dim),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
+def mmd_loss(source_features, target_features):
+    """Multi-kernel maximum mean discrepancy loss."""
+    sigmas = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 5, 10, 15,
+              20, 25, 30, 35, 100, 1e3, 1e4, 1e5, 1e6]
+    gaussian_kernel = lambda x, y: sum([
+        torch.exp(-(torch.cdist(x, y) ** 2) / (2 * sigma ** 2))
+        for sigma in sigmas
+    ])
+    return torch.mean(gaussian_kernel(source_features, source_features)) + \
+           torch.mean(gaussian_kernel(target_features, target_features)) - \
+           2 * torch.mean(gaussian_kernel(source_features, target_features))
+
+
+def ortho_loss(z_shared, z_private):
+    """Penalize cosine similarity between shared and private embeddings."""
+    cos_sim = torch.abs(torch.sum(z_shared * z_private, dim=-1)) / (
+        torch.norm(z_shared, dim=-1) * torch.norm(z_private, dim=-1) + 1e-8
+    )
+    return torch.mean(cos_sim)
 
 
 def link_loss_full_graph(link_model, fused, edge_index, neg_to_pos_ratio, device):

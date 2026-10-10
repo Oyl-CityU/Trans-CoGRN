@@ -592,6 +592,7 @@ if __name__ == "__main__":
     gold_standard_files = config['paths']['gold_standards']
     TOP_K = 500
     gnn_type = config['gnn']['gnn_layer_type']
+    display_cols = ["Precision@K", "AUPR", "Enrichment Fold @K"]
 
     for i in range(N_REPEATS):
         run_num = i + 1
@@ -655,13 +656,8 @@ if __name__ == "__main__":
 
 
                 results_summary_path = os.path.join(run_output_dir, f"evaluation_summary_on_{gs_name}.csv")
-                results_df.to_csv(results_summary_path)
-
-                display_cols = ["Precision@K",  "AUPR",  "Enrichment Fold @K"]
+                results_df[display_cols].to_csv(results_summary_path)
                 all_results_per_gs[gs_name].append(results_df)
-
-
-    display_cols = ["Precision@K",  "AUPR",  "Enrichment Fold @K"]
 
     for gs_name, results_list in all_results_per_gs.items():
 
@@ -671,18 +667,19 @@ if __name__ == "__main__":
         mean_df = grouped[display_cols].mean()
         std_df = grouped[display_cols].std()
 
-        print(f"\n--- {gs_name} - 均值 (Mean) - {N_REPEATS} 次运行 ---")
-        print(mean_df.round(4))
-        print(f"\n--- {gs_name} - 标准差 (Standard Deviation) - {N_REPEATS} 次运行 ---")
-        print(std_df.round(4))
-        print(f"\n--- {gs_name} - 聚合总结 (Mean ± STD) ---")
         formatted_df = pd.DataFrame()
         for col in display_cols:
-            if col in mean_df and col in std_df:
+            if N_REPEATS > 1 and col in mean_df and col in std_df:
                 formatted_df[col] = mean_df[col].map('{:.4f}'.format) + " ± " + std_df[col].map('{:.4f}'.format)
             elif col in mean_df:
                 formatted_df[col] = mean_df[col].map('{:.4f}'.format)
-        print(formatted_df)
+
+        terminal_table = mean_df.rename(columns={
+            "Precision@K": "Precision@500",
+            "Enrichment Fold @K": "EF@500",
+        })
+        print(f"\nTable 1 reproduction results ({args.dataset_name}, {gs_name})")
+        print(terminal_table.to_string(float_format=lambda value: f"{value:.4f}"))
 
         mean_summary_path = os.path.join(base_output_dir, f"evaluation_MEAN_on_{gs_name}.csv")
         std_summary_path = os.path.join(base_output_dir, f"evaluation_STD_on_{gs_name}.csv")

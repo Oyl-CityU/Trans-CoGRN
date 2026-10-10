@@ -1,20 +1,18 @@
-# CoGRN / Trans-CoGRN Reproduction
+# Reproduction of CoGRN and Trans-CoGRN Experiments
 
-这是一个面向 GitHub 发布的最小复现项目，保留论文中三个目标数据集 **Brain、Kidney 和 PBMC** 的必要处理后输入、代码、GPU 运行脚本及已完成结果：
-
-复现对象：*Trans-CoGRN: Multi-Omics Integration and Cross-Modal Transfer for Gene Regulatory Network Inference*（Chong Chen, Xiling Luo, Ying Li and Le Ou-Yang）。本仓库不包含论文 PDF。
+本仓库提供论文 *Trans-CoGRN: Multi-Omics Integration and Cross-Modal Transfer for Gene Regulatory Network Inference*（Chong Chen, Xiling Luo, Ying Li and Le Ou-Yang）的实验代码、处理后输入、模型权重、运行配置和复现结果。所有实验均通过仓库内的相对路径执行，覆盖以下内容：
 
 1. Table 1 的 CoGRN-GAT、Concat-GNN、RNA-only-GNN、ATAC-only-GNN；
 2. 第 3.4 节每个目标域使用 1–5 个源域的 Trans-CoGRN 推断；
 3. 主文 Figure 2（Precision@500）和 Supplementary Figure S2（NDCG@500、EF@500、AUPR）。
 
-未纳入原始 10x 矩阵、MAESTRO/FIMO 临时文件和训练中间 checkpoint。`data/datasets/` 中的六个处理后数据集及 `data/pretrained/` 中的权重是三目标域多源迁移所必需的输入。
+为避免重复存储未被复现实验直接读取的文件，仓库不包含原始 10x 矩阵、MAESTRO/FIMO 临时文件和训练中间 checkpoint。`data/datasets/` 中的六个处理后数据集及 `data/pretrained/` 中的权重用于三目标域多源迁移实验。
 
-## 已复现结果
+## 复现结果
 
 ### Table 1：CoGRN-GAT
 
-| Dataset | Precision@500（本次） | 论文 | AUPR（本次） | 论文 | EF@500（本次） | 论文 |
+| Dataset | Precision@500（Reproduced） | Reported | AUPR（Reproduced） | Reported | EF@500（Reproduced） | Reported |
 |---|---:|---:|---:|---:|---:|---:|
 | Brain | 0.840 | 0.838 | 0.671466 | 0.672 | 1.394628 | 1.391 |
 | Kidney | 0.868 | 0.868 | 0.735477 | 0.736 | 1.218568 | 1.219 |
@@ -47,8 +45,6 @@
 ├── step_full_joint.py
 ├── trans_model.py
 ├── data_loader_transfer.py
-├── step3_train_da_mapper.py
-├── step2_3_joint_optimization.py
 ├── CoGrn_improve.py
 ├── plot_section3_4.py
 ├── data/
@@ -138,6 +134,6 @@ CUDA_VISIBLE_DEVICES=0 bash run_section3_4_gpu.sh all
 - NDCG@500 按预测分数降序排列，使用 `1/log2(rank+1)` 折损并以理想 Top-500 排序归一化。
 - 当前结果是单次固定种子运行，不代表跨种子均值或置信区间。
 
-## 发布前许可检查
+## Code and data availability
 
-原工作目录未提供可确认的代码、处理后数据和预训练权重再分发许可证，因此本目录未擅自添加许可证。公开推送 GitHub 前，请由项目所有者确认代码许可证及数据/权重再分发权限；若无权直接分发，应改为提供合法数据仓库的下载脚本或获取说明。
+论文对应的项目主页为 <https://github.com/Oyl-CityU/Trans-CoGRN>。本仓库中的处理后数据和预训练权重仅用于验证文中报告的实验结果；其使用和再分发应遵循原始数据来源及项目仓库的许可条款。

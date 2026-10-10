@@ -2,16 +2,10 @@ import os
 import shutil
 import sys
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import TensorDataset, DataLoader
 import argparse
 import subprocess
 
-# 导入现有的模块和函数，不修改源代码
-# Joint_Pipeline ships only the joint-training mode (--joint_full).
-# Staged-training modules (step2_source_pretrain_mmd, step4_target_gnn_adaptation)
-# are intentionally omitted; their imports are dropped here.
+# This reproduction repository exposes only the end-to-end joint-training path.
 from step_full_joint import UniversalJointGRN
 
 # --- Path roots (set once, derived from this file's location) ---
@@ -92,67 +86,12 @@ def get_dataset_config(name):
         raise ValueError(f"Unknown dataset: {name}")
 
 
-def custom_train_mapper(src_configs, da_model_path, mapper_save_path, device):
-    """
-    由于原始的 step3 是硬编码数据源，这里将其逻辑封装为函数以支持动态源域列表。
-    """
-    print("=== 第三阶段: 基于 Universal DA Encoder 训练 Mapper ===")
-
-    z_rna_list = []
-    z_atac_list = []
-
-    for d in src_configs:
-        if not os.path.exists(d['orig_model']):
-            print(f"Warning: Model not found {d['orig_model']}, skipping {d['name']}")
-            continue
-
-        z_r, z_a = extract_latent_features(d, da_model_path, d['orig_model'], device)
-        z_rna_list.append(z_r)
-        z_atac_list.append(z_a)
-
-    if len(z_rna_list) == 0:
-        raise RuntimeError("No source models found. Ensure the original pre-trained models exist and paths are correct.")
-
-    z_rna_all = torch.cat(z_rna_list, dim=0)
-    z_atac_all = torch.cat(z_atac_list, dim=0)
-    print(f"\nTraining Data Shape: {z_rna_all.shape}")
-
-    embed_dim = z_rna_all.shape[1]
-    mapper = CrossModalMapper(input_dim=embed_dim, output_dim=embed_dim).to(device)
-    optimizer = optim.Adam(mapper.parameters(), lr=1e-3)
-    loss_fn = nn.MSELoss()
-
-    dataset = TensorDataset(z_rna_all, z_atac_all)
-    loader = DataLoader(dataset, batch_size=64, shuffle=True)
-
-    print("Start Training Mapper...")
-    mapper.train()
-    for epoch in range(140):
-        total_loss = 0
-        for b_rna, b_atac in loader:
-            optimizer.zero_grad()
-            pred = mapper(b_rna)
-            loss = loss_fn(pred, b_atac)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-
-        if (epoch+1) % 10 == 0:
-            print(f"Epoch {epoch+1}: MSE={total_loss/len(loader):.4f}")
-
-    os.makedirs(os.path.dirname(mapper_save_path), exist_ok=True)
-    torch.save(mapper.state_dict(), mapper_save_path)
-    print(f"Mapper 已保存: {mapper_save_path}")
-
-
 def main():
     parser = argparse.ArgumentParser(description="TransCoGRN Pipeline Runner")
     parser.add_argument('--target', type=str, required=True, help="目标域数据集名称 (例如 brain, kidney, PBMC)")
     parser.add_argument('--num_sources', type=int, required=True, help="使用的源域数据集数量 (例如 5, 3, 1)")
-    parser.add_argument('--joint_optim', action='store_true', help="是否使用论文中提到的 Step 2 和 Step 3 联合优化 (端到端训练)")
     parser.add_argument('--joint_full', action='store_true',
-                        help="把 Step 2/3/4 全部合成一个端到端联合训练 (encoder+mapper+fusion+GNN 同步更新). "
-                             "本开关启用时会跳过原 Step 4 单独微调.")
+                        help="联合优化 encoder、mapper、fusion 和 GNN")
     parser.add_argument('--lambda1', type=float, default=1.0, help="Mapper Loss weight")
     parser.add_argument('--lambda2', type=float, default=1.0, help="Ortho Loss weight")
     parser.add_argument('--lambda3', type=float, default=1.0, help="MMD Loss weight")
@@ -162,10 +101,8 @@ def main():
                         help="[--joint_full 专用] 目标域 GRN 链接预测损失权重 (mapper 输出 imputed ATAC)")
     parser.add_argument('--source_list', type=str, default=None,
                         help="可选: 显式指定源域逗号分隔列表 (例如: 'PBMC,brain,lymph')。若提供则覆盖默认顺序选择。")
-    parser.add_argument('--epochs_pretrain', type=int, default=120, help="Step 2/3 预训练的 epoch 数")
-    parser.add_argument('--lr_pretrain', type=float, default=1e-4, help="预训练学习率")
-    parser.add_argument('--epochs_finetune', type=int, default=250, help="Step 4 微调的 epoch 数")
-    parser.add_argument('--lr_finetune', type=float, default=1e-4, help="微调学习率")
+    parser.add_argument('--epochs_pretrain', type=int, default=120, help="联合训练的 epoch 数")
+    parser.add_argument('--lr_pretrain', type=float, default=1e-4, help="联合训练学习率")
     parser.add_argument('--tag', type=str, default='', help="额外标签，用于区分不同试验保存的中间模型权重")
     args = parser.parse_args()
 
@@ -232,17 +169,9 @@ def main():
     # 注意: CoGrn_improve.py 期望 {target}_TransCoGRN_Finetuned.csv 格式，因此此处不附加 tag。
     out_file = f"{output_dir}/{args.target}_TransCoGRN_Finetuned.csv"
 
-    # ---------------------------------------------------------
-    # 主训练流程: 三种互斥模式
-    #   --joint_full  : Step 2/3/4 全部联合 (encoder+mapper+fusion+GNN 同步反传, 推断也在内)
-    #   --joint_optim : Step 2/3 联合, Step 4 仍单独微调 (老行为)
-    #   (default)     : Step 2 / Step 3 / Step 4 顺序训练 (最老行为)
-    # ---------------------------------------------------------
     if not args.joint_full:
         raise SystemExit(
-            "Joint_Pipeline ships only the --joint_full mode. "
-            "Re-run with --joint_full, or use the original Unified_Pipeline "
-            "for staged-training modes."
+            "This reproduction requires --joint_full."
         )
 
     print("\n\n" + "="*40)

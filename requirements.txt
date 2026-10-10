@@ -3,8 +3,4 @@ pandas==1.5.3
 scipy==1.13.1
 scikit-learn==1.6.1
 PyYAML==6.0.2
-matplotlib==3.9.4
-seaborn==0.13.2
-networkx==3.2.1
 torch-geometric==2.6.1
-arboreto==0.1.6

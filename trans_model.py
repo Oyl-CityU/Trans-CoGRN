@@ -8,9 +8,6 @@ import torch.nn.functional as F
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 import os
-import matplotlib.pyplot as plt
-import seaborn as sns
-import networkx as nx
 from sklearn.metrics import precision_recall_curve, auc
 import scipy.io as sio
 import random
@@ -20,7 +17,6 @@ from torch.utils.data import DataLoader, TensorDataset
 from torch_geometric.data import Data
 from torch_geometric.nn import GATv2Conv
 from torch_geometric.utils import negative_sampling
-from arboreto.algo import genie3, grnboost2
 from collections import defaultdict
 
 # --- 全局随机种子 ---

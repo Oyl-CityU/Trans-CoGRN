@@ -7,9 +7,8 @@ mode="${1:-all}"
 log_dir="$project_dir/reproduction_logs/section3_4"
 
 cd "$project_dir"
-mkdir -p "$log_dir" result/Transfer_MultiSource results/section3_4/figures /tmp/trans-cogrn-section3-4-mpl
+mkdir -p "$log_dir" result/Transfer_MultiSource
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
-export MPLCONFIGDIR=/tmp/trans-cogrn-section3-4-mpl
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
 export PYTHONHASHSEED=42
 export PYTHONUNBUFFERED=1
@@ -79,6 +78,4 @@ case "$mode" in
     ;;
 esac
 
-"$python_bin" plot_section3_4.py \
-  --log-dir "$log_dir" \
-  --output-dir results/section3_4/figures
+echo "Section 3.4 reproduction completed. Metrics are reported above and saved in the evaluation output directories."

@@ -165,8 +165,7 @@ def main():
     da_enc_path = f"{output_dir}/{args.target}_{suffix}_Universal_Adapted_Encoder.pth"
     da_mapper_path = f"{output_dir}/{args.target}_{suffix}_Universal_Mapper.pth"
 
-    # 最终输出的预测图路径，名称保持和 CoGrn_improve.py 中预期的一致
-    # 注意: CoGrn_improve.py 期望 {target}_TransCoGRN_Finetuned.csv 格式，因此此处不附加 tag。
+    # The evaluator reads the generic target-specific prediction filename.
     out_file = f"{output_dir}/{args.target}_TransCoGRN_Finetuned.csv"
 
     if not args.joint_full:
@@ -207,10 +206,10 @@ def main():
     print("\n\n" + "="*40)
     print(" [Final Step] Running Final Evaluation")
     print("="*40)
-    # 通过 subprocess 直接调用测试脚本
-    # Reuse the exact interpreter that launched this pipeline. Falling back to
-    # the PATH command "python" can select Python 2 on Linux clusters.
-    subprocess.run([sys.executable, os.path.join(PROJECT_DIR, "CoGrn_improve.py"), args.target], check=True)
+    subprocess.run(
+        [sys.executable, os.path.join(PROJECT_DIR, "evaluate_transfer.py"), args.target],
+        check=True,
+    )
 
 if __name__ == "__main__":
     main()

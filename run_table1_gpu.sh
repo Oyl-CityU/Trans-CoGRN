@@ -7,9 +7,8 @@ mode="${1:-all}"
 log_dir="$project_dir/reproduction_logs/table1"
 
 cd "$project_dir"
-mkdir -p "$log_dir" results/table1/runs /tmp/cogrn-table1-mpl
+mkdir -p "$log_dir" results/table1/runs
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
-export MPLCONFIGDIR=/tmp/cogrn-table1-mpl
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
 export PYTHONHASHSEED=42
 export PYTHONUNBUFFERED=1

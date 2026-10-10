@@ -15,7 +15,7 @@ export PYTHONUNBUFFERED=1
 export OMP_NUM_THREADS=8
 export MKL_NUM_THREADS=8
 
-"$python_bin" -c 'import sys, torch; assert sys.version_info >= (3, 9); assert torch.cuda.is_available(), "CUDA GPU is required"; print("GPU:", torch.cuda.get_device_name(0))'
+"$python_bin" -c 'import sys, torch; assert sys.version_info >= (3, 9); assert torch.cuda.is_available(), "需要可用的 CUDA GPU"; print("GPU:", torch.cuda.get_device_name(0))'
 
 run_one() {
   local target="$1"
@@ -73,9 +73,9 @@ case "$mode" in
     run_kidney
     ;;
   *)
-    echo "Usage: $0 [all|brain|PBMC|kidney]" >&2
+    echo "用法：$0 [all|brain|PBMC|kidney]" >&2
     exit 2
     ;;
 esac
 
-echo "Section 3.4 reproduction completed. Metrics are reported above and saved in the evaluation output directories."
+echo "第 3.4 节复现完成，评估指标已在上方输出并保存至相应结果目录。"

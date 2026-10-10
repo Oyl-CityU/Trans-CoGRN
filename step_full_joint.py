@@ -1,6 +1,6 @@
-"""End-to-end optimization used for the Section 3.4 experiments.
+"""论文第 3.4 节实验使用的端到端联合优化流程。
 
-The encoder, mapper, fusion module and GNN are optimized jointly with:
+编码器、映射器、融合模块和 GNN 按以下目标进行联合优化：
 
   L = Σ_s [ NCE(emb_a_s, z_s_shared)
             + λ1 · MSE(mapper(z_s_shared), emb_a_s.detach())
@@ -10,9 +10,8 @@ The encoder, mapper, fusion module and GNN are optimized jointly with:
     + λ2 · Ortho(z_t_shared, z_t_private)
     + λ_grn_tgt · BCE_tgt(fusion(mapper(z_t_shared), z_t_shared) → GAT, A_t)
 
-Source-domain GRN losses use observed ATAC profiles and source prior graphs.
-The target-domain GRN loss uses mapper-imputed ATAC representations and the
-DeepSEM-derived target prior graph.
+源域 GRN 损失使用观测到的 ATAC 特征和源域先验图。
+目标域 GRN 损失使用映射器补全的 ATAC 表征和由 DeepSEM 得到的目标域先验图。
 """
 
 import os
@@ -34,7 +33,7 @@ from data_loader_transfer import load_aligned_data
 
 
 class CrossModalMapper(nn.Module):
-    """Map shared RNA embeddings to the latent ATAC space."""
+    """将共享 RNA 嵌入映射至 ATAC 潜在空间。"""
 
     def __init__(self, input_dim, output_dim, hidden_dim=256):
         super().__init__()
@@ -54,7 +53,7 @@ class CrossModalMapper(nn.Module):
 
 
 def mmd_loss(source_features, target_features):
-    """Multi-kernel maximum mean discrepancy loss."""
+    """多核最大均值差异损失。"""
     sigmas = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 5, 10, 15,
               20, 25, 30, 35, 100, 1e3, 1e4, 1e5, 1e6]
     gaussian_kernel = lambda x, y: sum([
@@ -67,7 +66,7 @@ def mmd_loss(source_features, target_features):
 
 
 def ortho_loss(z_shared, z_private):
-    """Penalize cosine similarity between shared and private embeddings."""
+    """对共享嵌入与私有嵌入之间的余弦相似度施加惩罚。"""
     cos_sim = torch.abs(torch.sum(z_shared * z_private, dim=-1)) / (
         torch.norm(z_shared, dim=-1) * torch.norm(z_private, dim=-1) + 1e-8
     )
@@ -149,12 +148,12 @@ class UniversalJointGRN:
         embed_dim = self.config['model']['embed_dim']
         fused_dim = self.config['model']['fused_dim']
 
-        # Base 容器 (取第一个源域的 ATAC 维度仅用于占位; 真正 ATAC encoder 在 atac_encoders 里)
+        # 基础模型容器（第一个源域的 ATAC 维度仅用于占位；实际 ATAC 编码器位于 atac_encoders 中）
         base_model = ContrastiveEncoders(
             src_data[0]['atac'].shape[1], rna_dim, embed_dim,
         ).to(device)
 
-        # 每个源域一个独立的 ATAC encoder
+        # 每个源域使用一个独立的 ATAC 编码器
         atac_encoders = nn.ModuleList()
         for i, s in enumerate(src_data):
             tmp = ContrastiveEncoders(s['atac'].shape[1], rna_dim, embed_dim).to(device)
@@ -179,7 +178,7 @@ class UniversalJointGRN:
 
         link_pred = LinkPredictor(in_channels=fused_dim, **self.config['gnn']).to(device)
 
-        # 用第一个源域的 fusion+GNN 权重做 warm-start (如果有)
+        # 如存在预训练权重，则使用第一个源域的融合模块和 GNN 进行热启动
         first_orig = src_data[0].get('orig_model')
         if first_orig and os.path.exists(first_orig):
             ckpt = torch.load(first_orig, map_location=device)
@@ -214,29 +213,29 @@ class UniversalJointGRN:
                    'MMD': 0.0, 'GRN_s': 0.0, 'GRN_t': 0.0}
             total = torch.tensor(0.0, device=device)
 
-            # Target 共享/私有特征 (供 MMD + Target GRN)
+            # 目标域共享/私有特征（用于 MMD 和目标域 GRN）
             z_t_shared, z_t_private = base_model.rna_encoder(tgt_rna)
 
-            # Per-source 损失
+            # 分别计算各源域损失
             for i, s in enumerate(src_data):
                 emb_a = atac_encoders[i](s['atac'])
                 z_s_shared, z_s_private = base_model.rna_encoder(s['rna'])
 
-                # 1. NCE
+                # 1. NCE 损失
                 p_a = base_model.atac_projection(emb_a)
                 p_r = base_model.rna_projection(z_s_shared)
                 l_nce = info_nce_loss(p_a, p_r)
 
-                # 2. Mapper MSE (detach ATAC 防止 ATAC encoder 向 mapper 坍缩)
+                # 2. 映射器 MSE（分离 ATAC 梯度，防止 ATAC 编码器向映射器坍缩）
                 l_map = mse(mapper(z_s_shared), emb_a.detach())
 
-                # 3. Ortho on source
+                # 3. 源域正交损失
                 l_ortho_s = ortho_loss(z_s_shared, z_s_private)
 
-                # 4. MMD (源 vs 目标)
+                # 4. MMD（源域与目标域）
                 l_mmd = mmd_loss(z_s_shared, z_t_shared)
 
-                # 5. Source GRN: fusion(real_atac, shared) -> GNN -> BCE on A_s
+                # 5. 源域 GRN：融合真实 ATAC 与共享表征，经 GNN 后对 A_s 计算 BCE
                 fused_s = fusion(emb_a, z_s_shared)
                 l_grn_s = link_loss_full_graph(link_pred, fused_s, s['edge_index'],
                                                neg_to_pos_ratio, device)
@@ -251,12 +250,12 @@ class UniversalJointGRN:
                 log['MMD']   += l_mmd.item()
                 log['GRN_s'] += l_grn_s.item()
 
-            # Target Ortho
+            # 目标域正交损失
             l_ortho_t = ortho_loss(z_t_shared, z_t_private)
             total = total + lambda_2 * l_ortho_t
             log['Ortho'] += l_ortho_t.item()
 
-            # Target GRN: fusion(imputed_atac, shared) -> GNN -> BCE on A_t
+            # 目标域 GRN：融合补全的 ATAC 与共享表征，经 GNN 后对 A_t 计算 BCE
             z_t_atac_hat = mapper(z_t_shared)
             fused_t = fusion(z_t_atac_hat, z_t_shared)
             l_grn_t = link_loss_full_graph(link_pred, fused_t, tgt_edge_index,

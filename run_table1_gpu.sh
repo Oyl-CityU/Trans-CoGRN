@@ -15,7 +15,7 @@ export PYTHONUNBUFFERED=1
 export OMP_NUM_THREADS=8
 export MKL_NUM_THREADS=8
 
-"$python_bin" -c 'import sys, torch; assert sys.version_info >= (3, 9); assert torch.cuda.is_available(), "CUDA GPU is required"; print("GPU:", torch.cuda.get_device_name(0))'
+"$python_bin" -c 'import sys, torch; assert sys.version_info >= (3, 9); assert torch.cuda.is_available(), "需要可用的 CUDA GPU"; print("GPU:", torch.cuda.get_device_name(0))'
 
 run_one() {
   local dataset="$1"
@@ -36,7 +36,7 @@ case "$mode" in
     run_one PBMC
     ;;
   *)
-    echo "Usage: $0 [all|brain|kidney|PBMC]" >&2
+    echo "用法：$0 [all|brain|kidney|PBMC]" >&2
     exit 2
     ;;
 esac

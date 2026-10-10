@@ -5,10 +5,10 @@ import torch
 import argparse
 import subprocess
 
-# This reproduction repository exposes only the end-to-end joint-training path.
+# 本复现仓库仅保留端到端联合训练流程。
 from step_full_joint import UniversalJointGRN
 
-# --- Path roots (set once, derived from this file's location) ---
+# --- 路径根目录（根据当前文件位置统一设置）---
 PROJECT_DIR    = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR       = os.path.join(PROJECT_DIR, 'data')
 DATASETS_DIR   = os.path.join(DATA_DIR, 'datasets')
@@ -165,12 +165,12 @@ def main():
     da_enc_path = f"{output_dir}/{args.target}_{suffix}_Universal_Adapted_Encoder.pth"
     da_mapper_path = f"{output_dir}/{args.target}_{suffix}_Universal_Mapper.pth"
 
-    # The evaluator reads the generic target-specific prediction filename.
+    # 评估程序读取按目标数据集命名的通用预测文件。
     out_file = f"{output_dir}/{args.target}_TransCoGRN_Finetuned.csv"
 
     if not args.joint_full:
         raise SystemExit(
-            "This reproduction requires --joint_full."
+            "本复现流程需要指定 --joint_full。"
         )
 
     print("\n\n" + "="*40)
@@ -201,7 +201,7 @@ def main():
         print(f"[Archive] 复制存档失败 (忽略): {_e}")
 
     # ---------------------------------------------------------
-    # [Final Step] Evaluation
+    # 最终步骤：评估
     # ---------------------------------------------------------
     print("\n\n" + "="*40)
     print(" [Final Step] Running Final Evaluation")

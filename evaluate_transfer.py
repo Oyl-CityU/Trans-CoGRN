@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate DeepSEM and Trans-CoGRN predictions for one target dataset."""
+"""评估单个目标数据集上的 DeepSEM 与 Trans-CoGRN 预测结果。"""
 
 import argparse
 import json
@@ -111,7 +111,7 @@ def main():
     })
     table = table[[f"Precision@{args.top_k}", f"NDCG@{args.top_k}",
                    f"EF@{args.top_k}", "AUPR"]]
-    print(f"\nSection 3.4 evaluation: target={args.target}")
+    print(f"\n第 3.4 节评估结果：目标数据集={args.target}")
     print(table.to_string(float_format=lambda value: f"{value:.4f}"))
 
 

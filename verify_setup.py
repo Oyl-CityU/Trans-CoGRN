@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the packaged inputs and the active CUDA environment."""
+"""检查项目输入文件与当前 CUDA 环境。"""
 
 from pathlib import Path
 import sys
@@ -50,28 +50,28 @@ def main() -> int:
         require(ROOT / "data" / "gold_standards" / filename, missing)
 
     if missing:
-        print("Missing or empty required files:", file=sys.stderr)
+        print("以下必要文件缺失或内容为空：", file=sys.stderr)
         for path in missing:
             print(f"  - {path.relative_to(ROOT)}", file=sys.stderr)
-        print("Run `git lfs pull` and retry.", file=sys.stderr)
+        print("请执行 `git lfs pull` 后重试。", file=sys.stderr)
         return 1
 
     try:
         import torch
         import torch_geometric
     except ImportError as exc:
-        print(f"Missing Python dependency: {exc}", file=sys.stderr)
+        print(f"缺少 Python 依赖：{exc}", file=sys.stderr)
         return 1
 
     if not torch.cuda.is_available():
-        print("Required files are complete, but PyTorch cannot see a CUDA GPU.", file=sys.stderr)
+        print("必要文件完整，但 PyTorch 未检测到 CUDA GPU。", file=sys.stderr)
         return 1
 
     print(f"Python: {sys.version.split()[0]}")
     print(f"PyTorch: {torch.__version__}")
     print(f"PyG: {torch_geometric.__version__}")
     print(f"GPU: {torch.cuda.get_device_name(0)}")
-    print("Repository setup is ready.")
+    print("项目环境检查通过。")
     return 0
 
 

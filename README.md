@@ -1,15 +1,15 @@
-# CoGRN and Trans-CoGRN Reproduction
+# CoGRN 与 Trans-CoGRN 实验复现
 
-This repository provides the code, processed inputs, pretrained weights, and execution scripts required to reproduce the CoGRN and Trans-CoGRN experiments described in *Trans-CoGRN: Multi-Omics Integration and Cross-Modal Transfer for Gene Regulatory Network Inference*.
+本仓库提供复现论文 *Trans-CoGRN: Multi-Omics Integration and Cross-Modal Transfer for Gene Regulatory Network Inference* 中 CoGRN 与 Trans-CoGRN 实验所需的代码、处理后输入、预训练权重和运行脚本。
 
-The repository covers:
+仓库覆盖以下实验：
 
-1. the CoGRN experiments for Brain, Kidney, and PBMC reported in Table 1;
-2. the Trans-CoGRN experiments in Section 3.4 using one to five source domains for each target dataset.
+1. Table 1 中 Brain、Kidney 和 PBMC 三个数据集上的 CoGRN 实验；
+2. 论文第 3.4 节中，以三个数据集分别作为目标域、依次使用一至五个源域的 Trans-CoGRN 实验。
 
-All paths used by the scripts are relative to the repository root. Raw 10x matrices and preprocessing intermediates are not required because the experiments start from the processed node, graph, RNA-feature, and ATAC-feature files included under `data/`.
+运行脚本中的路径均相对于仓库根目录。实验直接使用 `data/` 中已处理的节点、图结构、RNA 特征和 ATAC 特征文件，因此不需要原始 10x 矩阵及预处理中间文件。
 
-## Repository structure
+## 项目结构
 
 ```text
 .
@@ -31,33 +31,33 @@ All paths used by the scripts are relative to the repository root. Raw 10x matri
 ├── evaluate_transfer.py
 ├── common_genes_7sets.txt
 ├── data/
-│   ├── table1/                 # Processed inputs for Table 1
-│   ├── datasets/               # Processed source and target datasets
-│   ├── pretrained/             # Source-domain pretrained weights
-│   ├── configs/                # Target-domain configurations
-│   └── gold_standards/         # Evaluation reference networks
-├── result/Transfer_MultiSource/ # Generated Section 3.4 predictions and checkpoints
+│   ├── table1/                  # Table 1 所需的处理后输入
+│   ├── datasets/                # 源域与目标域的处理后数据
+│   ├── pretrained/              # 源域预训练权重
+│   ├── configs/                 # 目标域配置文件
+│   └── gold_standards/          # 评估所用参考网络
+├── result/Transfer_MultiSource/ # 第 3.4 节运行时生成的预测与检查点
 └── results/
-    ├── table1/                 # Table 1 outputs
-    └── section3_4/             # Section 3.4 outputs
+    ├── table1/                  # Table 1 输出
+    └── section3_4/              # 第 3.4 节输出
 ```
 
-The two top-level entry points are:
+两个主要运行入口为：
 
-- `run_table1_gpu.sh` for the paired multi-omics experiments in Table 1;
-- `run_section3_4_gpu.sh` for the multi-source transfer experiments in Section 3.4.
+- `run_table1_gpu.sh`：复现 Table 1 中的配对多组学实验；
+- `run_section3_4_gpu.sh`：复现第 3.4 节中的多源域迁移实验。
 
-## Environment
+## 环境配置
 
-The reproduction was validated with:
+本项目已在以下环境中完成验证：
 
-- Linux;
-- Python 3.9;
-- PyTorch 2.4.0 with CUDA 12.4;
-- PyTorch Geometric 2.6.1;
-- one NVIDIA GPU.
+- Linux；
+- Python 3.9；
+- PyTorch 2.4.0（CUDA 12.4）；
+- PyTorch Geometric 2.6.1；
+- 单张 NVIDIA GPU。
 
-Create and activate the environment:
+创建并激活环境：
 
 ```bash
 conda create -n CoGRN python=3.9 -y
@@ -67,33 +67,33 @@ pip install torch==2.4.0 --index-url https://download.pytorch.org/whl/cu124
 pip install -r requirements.txt
 ```
 
-Confirm that the processed inputs, pretrained weights, Python dependencies, and GPU are available:
+检查处理后输入、预训练权重、Python 依赖和 GPU 是否可用：
 
 ```bash
 python verify_setup.py
 ```
 
-## Large files
+## 大文件下载
 
-The pretrained weights and large feature matrices are managed with Git LFS. After cloning the repository, run:
+预训练权重和较大的特征矩阵由 Git LFS 管理。克隆仓库后执行：
 
 ```bash
 git lfs install
 git lfs pull
 ```
 
-`verify_setup.py` reports missing or empty inputs when the LFS objects have not been downloaded correctly.
+如果 Git LFS 对象未正确下载，`verify_setup.py` 会报告缺失或内容为空的文件。
 
-## Reproducing Table 1
+## 复现 Table 1
 
-Run all three target datasets sequentially on GPU 0:
+在 GPU 0 上依次运行三个目标数据集：
 
 ```bash
 conda activate CoGRN
 CUDA_VISIBLE_DEVICES=0 bash run_table1_gpu.sh all
 ```
 
-To run one dataset only:
+也可以只运行一个数据集：
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 bash run_table1_gpu.sh brain
@@ -101,18 +101,18 @@ CUDA_VISIBLE_DEVICES=0 bash run_table1_gpu.sh kidney
 CUDA_VISIBLE_DEVICES=0 bash run_table1_gpu.sh PBMC
 ```
 
-Each run trains CoGRN-GAT, Concat-GNN, RNA-only-GNN, and ATAC-only-GNN. The final terminal table reports only the three metrics used in Table 1: `Precision@500`, `AUPR`, and `EF@500`. Predictions and metric tables are written to `results/table1/runs/`; terminal logs are written to `reproduction_logs/table1/`.
+每次运行会训练 CoGRN-GAT、Concat-GNN、RNA-only-GNN 和 ATAC-only-GNN。终端最终仅输出 Table 1 使用的三项指标：`Precision@500`、`AUPR` 和 `EF@500`。预测文件和指标表保存在 `results/table1/runs/`，终端日志保存在 `reproduction_logs/table1/`。
 
-## Reproducing Section 3.4
+## 复现论文第 3.4 节
 
-Run all 15 source-domain settings sequentially on GPU 0:
+在 GPU 0 上依次运行全部 15 组源域设置：
 
 ```bash
 conda activate CoGRN
 CUDA_VISIBLE_DEVICES=0 bash run_section3_4_gpu.sh all
 ```
 
-To reproduce a single target dataset, replace `all` with `brain`, `PBMC`, or `kidney`:
+如只需复现一个目标数据集，可将 `all` 替换为 `brain`、`PBMC` 或 `kidney`：
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 bash run_section3_4_gpu.sh brain
@@ -120,21 +120,21 @@ CUDA_VISIBLE_DEVICES=0 bash run_section3_4_gpu.sh PBMC
 CUDA_VISIBLE_DEVICES=0 bash run_section3_4_gpu.sh kidney
 ```
 
-The source-domain order is:
+源域加入顺序如下：
 
-- Brain: `PBMC`, `brain3k`, `Jejunum`, `lymph`, `kidney`;
-- PBMC: `brain`, `brain3k`, `Jejunum`, `lymph`, `kidney`;
-- Kidney: `PBMC`, `brain`, `brain3k`, `Jejunum`, `lymph`.
+- Brain：`PBMC`、`brain3k`、`Jejunum`、`lymph`、`kidney`；
+- PBMC：`brain`、`brain3k`、`Jejunum`、`lymph`、`kidney`；
+- Kidney：`PBMC`、`brain`、`brain3k`、`Jejunum`、`lymph`。
 
-For each target, the script evaluates the first one through five domains in the corresponding list. Evaluation metrics are printed directly in the terminal. Predictions and intermediate checkpoints are written to `result/Transfer_MultiSource/`, and terminal logs are written to `reproduction_logs/section3_4/`. No plotting step is required.
+对于每个目标域，脚本按上述顺序分别使用前一至五个源域进行训练和评估。评估指标直接打印到终端。预测文件和中间检查点写入 `result/Transfer_MultiSource/`，终端日志写入 `reproduction_logs/section3_4/`。该复现流程不需要绘图步骤。
 
-## Reproducibility notes
+## 可复现性说明
 
-- The scripts set the Python, NumPy, PyTorch, and CUDA random seeds.
-- PyTorch Geometric negative sampling and GPU reductions can still introduce run-to-run variation.
-- The source-domain order above defines the two-source and four-source settings.
-- The packaged experiments use one fixed-seed run per setting and do not estimate confidence intervals across seeds.
+- 运行脚本固定 Python、NumPy、PyTorch 和 CUDA 的随机种子；
+- PyTorch Geometric 的负采样及 GPU 归约计算仍可能产生少量运行间差异；
+- 上述源域顺序同时定义了双源域和四源域等实验设置；
+- 当前实验对每项设置运行一次固定随机种子，不计算跨随机种子的置信区间。
 
-## Code and data availability
+## 代码与数据来源
 
-The project page associated with the manuscript is <https://github.com/Oyl-CityU/Trans-CoGRN>. Use and redistribution of the processed data and pretrained weights remain subject to the terms of the original data sources and project repository.
+论文相关项目主页为 <https://github.com/Oyl-CityU/Trans-CoGRN>。处理后数据与预训练权重的使用和再分发应遵循原始数据来源及原项目仓库的相关条款。
